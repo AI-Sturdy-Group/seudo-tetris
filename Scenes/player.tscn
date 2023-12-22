@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://b5qiq0gkut8ab"]
+
+[ext_resource type="Script" path="res://Scenes/player.gd" id="1_lmnvp"]
+[ext_resource type="PackedScene" uid="uid://cu8fgm3lvaa3u" path="res://Scenes/cell.tscn" id="1_w7w41"]
+
+[node name="Player" type="Node2D"]
+script = ExtResource("1_lmnvp")
+
+[node name="Cell" parent="." instance=ExtResource("1_w7w41")]
+
+[node name="Cell2" parent="." instance=ExtResource("1_w7w41")]
+position = Vector2(-95, 0)
+
+[node name="Cell3" parent="." instance=ExtResource("1_w7w41")]
+position = Vector2(0, -95)
