@@ -1,11 +1,7 @@
 extends Node2D
 
 var _board_objects = []
-var _positioned_objects = []
-var _hovered_objects = []
-var DEFAULT_COLOR = Color(1, 1, 1, 1)
-var DEFAULT_HOVERED_COLOR = Color(0.5,0.5,0.5,0.5)
-var DEFAULT_PLACED_COLOLR = Color(1, 0, 0, 1)
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	_createBoard()
@@ -48,35 +44,85 @@ func _createPlayer():
 
 func _input(event):
 	if event is InputEventMouseMotion:
-		_get_stepped_grid(event.position)
+		_handle_mouse_move(event.position)
+		
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			_handle_mouse_click(event.position)
 
-func _get_stepped_grid(mouse_position: Vector2):
+func _handle_mouse_click(mouse_position: Vector2):
+	var valid_placement = _can_object_be_placed(mouse_position)
+	if valid_placement:
+		_place_player_object()
+
+func _handle_mouse_move(mouse_position: Vector2):
 	var grid_objects = _board_objects
 	
-	if len(_hovered_objects) > 0:
-		_unhover_objects()
+	_unhover_objects()
 	
 	var player_objects = (self as Node).get_child(45)._get_child_positions() 
-	
 	for player_object in player_objects:	
 		var player_object_x_position = mouse_position.x + (player_object.x * 95)
 		var player_object_y_position = mouse_position.y + (player_object.y * 95)
+		var player_object_position: Vector2 = Vector2(player_object_x_position, player_object_y_position)
 		
-		var outside_board = player_object_x_position > 9 * 95 or player_object_y_position > 5*95	
+		var outside_board = _is_object_outside_board(player_object_position)	
 		# if mouse outside board then return
 		if outside_board:
-			return	
+			continue	
 
 		var pointed_object_x_position = floor((player_object_x_position) / 95)
 		var pointed_object_y_position = floor((player_object_y_position) / 95)
-		var pointed_object_index = pointed_object_x_position + pointed_object_y_position * 9
-		if pointed_object_index <= len(grid_objects) - 1:
-			_paint_grid_object(grid_objects[pointed_object_index], DEFAULT_HOVERED_COLOR)
-			_hovered_objects.append(grid_objects[pointed_object_index])
+		
+		var pointed_object = _get_board_object_from_coordinates(Vector2(pointed_object_x_position, pointed_object_y_position))
+		
+		if pointed_object:
+			pointed_object.on_hovered()
+			#_paint_grid_object(pointed_object, DEFAULT_HOVERED_COLOR)
+			#_hovered_objects.append(pointed_object)
 
 func _unhover_objects():
-	for hovered_object in _hovered_objects:
-		_paint_grid_object(hovered_object, DEFAULT_COLOR) 
+	var hovered_objects = _get_hovered_objects()
+	
+	for hovered_object in hovered_objects:
+		hovered_object.on_default()
 
-func _paint_grid_object(grid_object: Node, color: Color):
-	(grid_object.get_child(0)).get_child(0).color = color
+func _is_object_outside_board(object_position: Vector2):
+	return 0 > object_position.x or object_position.x > 9 * 95 or 0 > object_position.y or object_position.y > 5*95
+
+func _can_object_be_placed(mouse_position: Vector2):
+	var valid_placement = true
+	var player_objects = (self as Node).get_child(45)._get_child_positions()
+	
+	for player_object in player_objects:
+		var player_object_x_position = mouse_position.x + (player_object.x * 95)
+		var player_object_y_position = mouse_position.y + (player_object.y * 95)
+		var player_object_position: Vector2 = Vector2(player_object_x_position, player_object_y_position)
+		
+		var pointed_object_x_position = floor((player_object_x_position) / 95)
+		var pointed_object_y_position = floor((player_object_y_position) / 95)
+		var pointed_object = Vector2(pointed_object_x_position, pointed_object_y_position)
+		
+		var board_object = _get_board_object_from_coordinates(pointed_object)
+		
+		valid_placement = (board_object != null) and (not board_object.is_positioned())
+		
+		if not valid_placement:
+			break
+		
+	return valid_placement
+	
+func _get_board_object_from_coordinates(coordinates: Vector2):
+	var pointed_object_index = coordinates.x + coordinates.y * 9
+	if pointed_object_index < len(_board_objects):
+		return _board_objects[pointed_object_index]
+		
+	return null
+	
+func _place_player_object():
+	var hovered_objects = _get_hovered_objects()
+	for hovered_object in hovered_objects:
+		hovered_object.on_positioned()
+
+func _get_hovered_objects():
+	return _board_objects.filter(func (board_object): return board_object.is_hovered());
