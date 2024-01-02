@@ -41,6 +41,8 @@ func on_default():
 	current_state = posible_states.default
 	_paint_cell_according_to_current_state()
 	
+func set_placed_color(color: Color):
+	state_color[posible_states.positioned] = color
 
 func on_positioned():
 	if current_state == posible_states.hovered:

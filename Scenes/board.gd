@@ -1,13 +1,31 @@
 extends Node2D
 
 var _board_objects = []
+var _players = []
+var _current_turn
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	_createBoard()
-	_createPlayer()
+	for i in range(2):
+		_createPlayer()
+		
+	_players[0]._assign_color(Color.BLUE)
+	_players[1]._assign_color(Color.INDIGO)
+	
+	_start_game()
 	pass # Replace with function body.
 
+func _start_game():
+	_current_turn = 0
+	
+func _end_turn():
+	_current_turn += 1
+	
+func _get_current_player():
+	var player_index = (1+ (-1 ** (_current_turn + 1)))/2
+	
+	return _players[player_index]
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -27,7 +45,6 @@ func _createBoard():
 			add_child(cloneNode)
 			_board_objects.append(cloneNode)
 		
-	print(self.get_child_count());
 	pass
 	
 func _createPlayer():
@@ -40,7 +57,7 @@ func _createPlayer():
 	player_instance_node2d.position.y = 300
 	
 	add_child(player_instance)
-	
+	_players.append(player_instance)
 
 func _input(event):
 	if event is InputEventMouseMotion:
@@ -54,6 +71,7 @@ func _handle_mouse_click(mouse_position: Vector2):
 	var valid_placement = _can_object_be_placed(mouse_position)
 	if valid_placement:
 		_place_player_object()
+		_end_turn()
 
 func _handle_mouse_move(mouse_position: Vector2):
 	var grid_objects = _board_objects
@@ -122,6 +140,9 @@ func _get_board_object_from_coordinates(coordinates: Vector2):
 func _place_player_object():
 	var hovered_objects = _get_hovered_objects()
 	for hovered_object in hovered_objects:
+		var current_player = _get_current_player()
+		var player_color = current_player.get_color()
+		hovered_object.set_placed_color(player_color)
 		hovered_object.on_positioned()
 
 func _get_hovered_objects():
